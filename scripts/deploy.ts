@@ -1,13 +1,12 @@
 import { ethers, getNamedAccounts } from "hardhat";
 
 async function main() {
-  const { deployer } = await getNamedAccounts();
+  // const { deployer, owner } = await getNamedAccounts();
 
-  const memberMe = await ethers.deployContract("MemberMe", ['Fan Club', 'FCB', deployer]);
+  const factory = await ethers.deployContract("MemberMeFactory");
+  await factory.waitForDeployment();
 
-  await memberMe.waitForDeployment();
-
-  console.log(`MemberMe deployed to ${memberMe.target}`);
+  console.log(`MemberMe deployed to ${factory.target}`);
 }
 
 // We recommend this pattern to be able to use async/await everywhere

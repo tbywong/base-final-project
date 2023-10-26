@@ -6,14 +6,18 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deployer } = await hre.getNamedAccounts();
 
   // Constants for deployment
-  const CONTRACT_NAME = "Test Membership";
-  const CONTRACT_SYMBOL = "TST";
+  // const CONTRACT_NAME = "Test Membership";
+  // const CONTRACT_SYMBOL = "TST";
 
-  await deploy("MemberMe", {
+  // await deploy("MemberMe", {
+  //   from: deployer,
+  //   args: [CONTRACT_NAME, CONTRACT_SYMBOL, deployer]
+  // });
+
+  await deploy("MemberMeFactory", {
     from: deployer,
-    args: [CONTRACT_NAME, CONTRACT_SYMBOL, deployer]
-  });
-
+    args: []
+  })
 };
 
 export default func;
