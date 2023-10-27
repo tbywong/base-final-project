@@ -30,6 +30,7 @@ import { ethers, Wallet, JsonRpcProvider } from 'ethers'
 import MemberMeJSON from '../../../../artifacts/contracts/MemberMe.sol/MemberMe.json'
 import LOCAL from '../../local.json'
 import useStore from '../../store/store'
+import { EtherscanPlugin } from 'ethers'
 
 const MEMBERSHIP_STATUSES = ['Active', 'Deactivated', 'Expired']
 
@@ -59,7 +60,7 @@ const adminPageTheme = extendTheme({
 })
 
 const Plans = () => {
-    const { selectedContract, currentPlans, setCurrentPlans, setEthersContract, setCurrentMembership } = useStore()
+    const { selectedContract, setSelectedContract, currentPlans, setCurrentPlans, ethersContract, setEthersContract, setCurrentMembership } = useStore()
     const [price, setPrice] = useState<string>('')
     const [name, setName] = useState<string | undefined>()
     const [tokenURI, setTokenURI] = useState<string | undefined>()
@@ -68,33 +69,36 @@ const Plans = () => {
     const [contractName, setContractName] = useState<string | undefined>()
     const [symbol, setSymbol] = useState<string | undefined>()
     const [memberships, setMemberships] = useState<Membership[]>([])
-    const [contract, setContract] = useState<ethers.Contract>()
+    // const [contract, setContract] = useState<ethers.Contract>()
 
     useEffect(() => {
         async function fetchData() {
-            const ownerWallet = new Wallet(LOCAL.accountOne.pk)
-            const provider = new JsonRpcProvider(LOCAL.jsonRpcProviderURI)
-            const signer = ownerWallet.connect(provider)
-            const contract = new ethers.Contract(selectedContract, MemberMeJSON.abi, signer)
-            setContract(contract)
-            setEthersContract(contract)
-            const owner = await contract.getAdmin()
+            // const ownerWallet = new Wallet(LOCAL.accountOne.pk)
+            // const provider = new JsonRpcProvider(LOCAL.jsonRpcProviderURI)
+            // const signer = ownerWallet.connect(provider)
+            // const contract = new ethers.Contract(selectedContract, MemberMeJSON.abi, signer)
+            // setContract(contract)
+            // setEthersContract(contract)
+
+            const selectedContract = await ethersContract.getAddress()
+            setSelectedContract(selectedContract)
+            const owner = await ethersContract.owner()
             setOwner(owner)
-            const name = await contract.name()
+            const name = await ethersContract.name()
             setContractName(name)
-            const symbol = await contract.symbol()
+            const symbol = await ethersContract.symbol()
             setSymbol(symbol)
-            const plans = await contract.getAllPlans()
+            const plans = await ethersContract.getAllPlans()
             setPlans(plans)
             setCurrentPlans(plans)
-            const mems = await contract.getAllMemberships()
+            const mems = await ethersContract.getAllMemberships()
             setMemberships(mems)
-            try {
-                const mem = await contract.getMembership()
-                setCurrentMembership(mem)
-            } catch {
-                console.log('no membbership found')
-            }
+            // try {
+            //     const mem = await ethersContract.getMembership()
+            //     setCurrentMembership(mem)
+            // } catch {
+            //     console.log('no membbership found')
+            // }
 
         }
 
@@ -115,21 +119,21 @@ const Plans = () => {
 
     const createNewPlan = async () => {
         const priceWei = ethers.parseEther(price)
-        await contract?.createPlan(name, tokenURI, priceWei)
+        await ethersContract.createPlan(name, tokenURI, priceWei)
         await showPlans()
     }
 
     const showPlans = async () => {
-        const plans = await contract?.getAllPlans()
+        const plans = await ethersContract.getAllPlans()
         setPlans(plans)
         setCurrentPlans(plans)
     }
 
     const expireMembership = async (planId: number) => {
-        await contract?.expireMembership(planId)
-        const mem = await contract?.getMembership()
+        await ethersContract.expireMembership(planId)
+        const mem = await ethersContract.getMembership()
         setCurrentMembership(mem)
-        const mems = await contract?.getAllMemberships()
+        const mems = await ethersContract.getAllMemberships()
         setMemberships(mems)
     }
 

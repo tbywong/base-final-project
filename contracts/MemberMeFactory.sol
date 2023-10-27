@@ -13,7 +13,9 @@ contract MemberMeFactory {
     ) external returns (address) {
         MemberMe newContract = new MemberMe(_name, _symbol, msg.sender);
         contractAddresses.push(address(newContract));
+
         emit ContractCreated(address(newContract));
+
         return address(newContract);
     }
 

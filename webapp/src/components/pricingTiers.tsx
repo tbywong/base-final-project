@@ -59,8 +59,12 @@ const PricingTiers: NextPage = () => {
     const mintMembership = async (plan: Plan) => {
         const options = { value: ethers.parseUnits(plan.price.toString(), "wei") }
         const membership = await ethersContract.mintMembership(plan.id, options)
-        const pubMem = await ethersContract.getMembership()
-        setCurrentMembership(pubMem)
+        try {
+            const pubMem = await ethersContract.getMembership()
+            setCurrentMembership(pubMem)
+        } catch {
+            console.log('couldn\'t get membership')
+        }
     }
 
     return (

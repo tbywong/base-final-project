@@ -16,13 +16,36 @@ import {
 import { CheckIcon } from '@chakra-ui/icons'
 
 // Replace test data with your own
-const features = Array.apply(null, Array(8)).map(function (x, i) {
-    return {
-        id: i,
-        title: 'Lorem ipsum dolor sit amet',
-        text: 'Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam.',
+const features = [
+    {
+        id: 1,
+        title: 'Multiple contracts',
+        text: 'Create different contracts for different fan groups'
+    },
+    {
+        id: 2,
+        title: 'Customizable plans',
+        text: 'Create any number of plans to access different levels of your material'
+    },
+    {
+        id: 3,
+        title: 'NFT-gated membership',
+        text: 'Access to plan-specific content through NFT'
+    },
+    {
+        id: 4,
+        title: 'Engaged renewals',
+        text: 'Customers must re-engage monthly by renewing their subscription'
     }
-})
+]
+
+// Array.apply(null, Array(8)).map(function (x, i) {
+//     return {
+//         id: i,
+//         title: 'Lorem ipsum dolor sit amet',
+//         text: 'Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam.',
+//     }
+// })
 
 const GridListWithHeading: NextPage = () => {
     return (
@@ -68,8 +91,7 @@ const Home: NextPage = () => {
                         </Text>
                     </Heading>
                     <Text color={'gray.500'}>
-                        Monetize your content by charging your most loyal readers and reward them
-                        loyalty points. Give back to your loyal readers by granting them access to
+                        Monetize your content by charging your most loyal followers. Give back to your loyal readers by granting them access to
                         your pre-releases and sneak-peaks.
                     </Text>
                     <Stack

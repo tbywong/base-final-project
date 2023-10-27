@@ -20,12 +20,14 @@ import {
 import ArticleList from '../components/blog';
 import useStore from '../store/store'
 
-interface MembershipPublic {
+interface Membership {
     owner: string;
     status: number;
+    planId: number;
     tokenId: number;
+    createdAt: number;
+    lastRenewedAt: number;
     tokenURI: string;
-    planName: string;
 }
 
 const MEMBERSHIP_STATUSES = ['Active', 'Deactivated', 'Expired']
@@ -42,15 +44,15 @@ const MemberPage: NextPage = () => {
 
     useEffect(() => {
         async function fetchData() {
-            try {
-                // if (!currentMembership) {
-                const membership = await ethersContract.getMembership()
-                setCurrentMembership(membership)
-                console.log('membership load', membership)
-                // }
-            } catch {
-                console.log('no membership')
-            }
+            console.log('before')
+            // const memberships = await ethersContract.getAllMemberships()
+            const membership = await ethersContract.getMembership()
+            console.log('mem', membership)
+            // setCurrentMembership(memberships[0])
+
+            // if (membership.tokenId.toString() !== "0") {
+            //     setCurrentMembership(membership)
+            // }
         }
         fetchData()
     }, [])
@@ -67,7 +69,7 @@ const MemberPage: NextPage = () => {
         var price;
         for (let index = 0; index < currentPlans.length; index++) {
             const plan = currentPlans[index];
-            if (currentMembership.planName === plan.name) {
+            if (currentMembership.planId === plan.id) {
                 price = plan.price
             }
         }

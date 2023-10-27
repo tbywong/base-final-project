@@ -4,28 +4,28 @@ pragma solidity >=0.8.0 <0.9.0;
 import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import {ERC721URIStorage} from "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 contract MemberMe is ERC721URIStorage, Ownable {
-    error PlanAlreadyExists();
+    using EnumerableSet for EnumerableSet.AddressSet;
+
+    error PlanNameAlreadyExists(string);
     error PlanIdNotFound(uint);
     error PriceCannotBeZero();
     error IncorrectAmountSent(uint, uint);
     error NotAllowed();
+
+    enum MembershipStatus {
+        Active,
+        Deactivated,
+        Expired
+    }
 
     struct Plan {
         uint id;
         uint price;
         string name;
         string tokenURI;
-        // stretch: recurringPeriod { monthly, annually, etc }
-    }
-    Plan[] private _plans;
-    mapping(uint => Plan) private _planData;
-
-    enum MembershipStatus {
-        Active,
-        Deactivated,
-        Expired
     }
 
     struct Membership {
@@ -35,31 +35,21 @@ contract MemberMe is ERC721URIStorage, Ownable {
         uint tokenId;
         uint createdAt;
         uint lastRenewedAt;
-    }
-    struct MembershipPublic {
-        address owner;
-        MembershipStatus status;
-        uint tokenId;
         string tokenURI;
-        string planName;
     }
-    mapping(uint => Membership) private _memberships;
-    mapping(address => Membership) private _addrMemberships;
 
     uint private _tokenCounter;
-    address private _admin;
+    Plan[] private _plans;
+    mapping(uint => Plan) private _plansMap;
+    mapping(address => Membership) private _memberships;
+    EnumerableSet.AddressSet private _tokenHolders;
 
     constructor(
         string memory _name,
         string memory _symbol,
         address _owner
     ) ERC721(_name, _symbol) Ownable(_owner) {
-        _admin = _owner;
         _tokenCounter = 0;
-    }
-
-    function getAdmin() external view returns (address) {
-        return _admin;
     }
 
     function createPlan(
@@ -72,7 +62,7 @@ contract MemberMe is ERC721URIStorage, Ownable {
                 keccak256(abi.encodePacked(_plans[i].name)) ==
                 keccak256(abi.encodePacked(_name))
             ) {
-                revert PlanAlreadyExists();
+                revert PlanNameAlreadyExists(_name);
             }
         }
 
@@ -83,7 +73,7 @@ contract MemberMe is ERC721URIStorage, Ownable {
         uint planId = _plans.length + 1;
         Plan memory plan = Plan(planId, _price, _name, _tokenURI);
         _plans.push(plan);
-        _planData[planId] = plan;
+        _plansMap[planId] = plan;
 
         return plan;
     }
@@ -97,26 +87,25 @@ contract MemberMe is ERC721URIStorage, Ownable {
             revert PlanIdNotFound(_planId);
         }
 
-        Plan memory currentPlan = _planData[_planId];
-        if (msg.value != currentPlan.price) {
-            revert IncorrectAmountSent(msg.value, currentPlan.price);
+        Plan memory plan = _plansMap[_planId];
+        if (msg.value != plan.price) {
+            revert IncorrectAmountSent(msg.value, plan.price);
         }
 
         _tokenCounter++;
         _safeMint(msg.sender, _tokenCounter);
-        _setTokenURI(_tokenCounter, currentPlan.tokenURI);
+        _setTokenURI(_tokenCounter, plan.tokenURI);
+        _tokenHolders.add(msg.sender);
 
-        Membership memory newMembership = Membership(
+        _memberships[msg.sender] = Membership(
             msg.sender,
             MembershipStatus.Active,
-            currentPlan.id,
+            plan.id,
             _tokenCounter,
             block.timestamp,
-            0
+            0,
+            tokenURI(_tokenCounter)
         );
-
-        _memberships[_tokenCounter] = newMembership;
-        _addrMemberships[msg.sender] = newMembership;
     }
 
     function renewMembership(
@@ -127,19 +116,15 @@ contract MemberMe is ERC721URIStorage, Ownable {
             revert NotAllowed();
         }
 
-        Membership storage mem = _memberships[_tokenId];
-        Membership storage addrMem = _addrMemberships[msg.sender];
-
-        uint price = _planData[mem.planId].price;
+        Membership storage membership = _memberships[msg.sender];
+        uint price = _plans[membership.planId - 1].price;
 
         if (msg.value != price) {
             revert IncorrectAmountSent(msg.value, price);
         }
 
-        mem.lastRenewedAt = _currentTime;
-        mem.status = MembershipStatus.Active;
-        addrMem.lastRenewedAt = _currentTime;
-        addrMem.status = MembershipStatus.Active;
+        membership.lastRenewedAt = _currentTime;
+        membership.status = MembershipStatus.Active;
     }
 
     function cancelMembership(uint _tokenId) external {
@@ -148,22 +133,11 @@ contract MemberMe is ERC721URIStorage, Ownable {
         }
 
         _burn(_tokenId);
-
-        _memberships[_tokenId].status = MembershipStatus.Deactivated;
-        _addrMemberships[msg.sender].status = MembershipStatus.Deactivated;
+        _memberships[msg.sender].status = MembershipStatus.Deactivated;
     }
 
-    function getMembership() external view returns (MembershipPublic memory) {
-        Membership memory mem = _addrMemberships[msg.sender];
-        Plan memory plan = _planData[mem.planId];
-        MembershipPublic memory memPub = MembershipPublic(
-            mem.owner,
-            mem.status,
-            mem.tokenId,
-            tokenURI(mem.tokenId),
-            plan.name
-        );
-        return memPub;
+    function getMembership() external view returns (Membership memory) {
+        return _memberships[msg.sender];
     }
 
     function getAllMemberships()
@@ -172,17 +146,18 @@ contract MemberMe is ERC721URIStorage, Ownable {
         onlyOwner
         returns (Membership[] memory)
     {
-        Membership[] memory allMems = new Membership[](_tokenCounter);
+        Membership[] memory memberships = new Membership[](
+            _tokenHolders.length()
+        );
         for (uint8 i = 0; i < _tokenCounter; i++) {
-            allMems[i] = _memberships[i + 1];
+            memberships[i] = _memberships[_tokenHolders.at(i)];
         }
-        return allMems;
+        return memberships;
     }
 
     function expireMembership(uint _tokenId) external onlyOwner {
-        Membership storage mem = _memberships[_tokenId];
-        Membership storage addrMem = _addrMemberships[msg.sender];
-        mem.status = MembershipStatus.Expired;
-        addrMem.status = MembershipStatus.Expired;
+        address membershipOwner = ownerOf(_tokenId);
+        Membership storage membership = _memberships[membershipOwner];
+        membership.status = MembershipStatus.Expired;
     }
 }

@@ -33,7 +33,7 @@ describe('MemberMe', function () {
     });
 
     it('should return a contract address', async () => {
-        const response = await factory.createInstance('Fan Club', 'FCB')
+        const response = await factory.createContract('Fan Club', 'FCB')
         expect(response).to.not.be.null;
         // expect(response).to.be.a('string');
     });

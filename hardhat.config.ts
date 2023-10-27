@@ -23,7 +23,18 @@ const config: HardhatUserConfig = {
       url: "https://goerli.base.org",
       accounts: {
         mnemonic: process.env.MNEMONIC ?? ""
+      },
+      verify: {
+        etherscan: {
+          apiUrl: "https://api-goerli.basescan.org",
+          apiKey: process.env.ETHERSCAN_API_KEY ?? "ETHERSCAN_API_KEY"
+        }
       }
+    }
+  },
+  etherscan: {
+    apiKey: {
+      baseGoerli: "ETHERSCAN_API_KEY"
     }
   }
 };

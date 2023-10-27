@@ -5,18 +5,12 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deploy } = hre.deployments;
   const { deployer } = await hre.getNamedAccounts();
 
-  // Constants for deployment
-  // const CONTRACT_NAME = "Test Membership";
-  // const CONTRACT_SYMBOL = "TST";
-
-  // await deploy("MemberMe", {
-  //   from: deployer,
-  //   args: [CONTRACT_NAME, CONTRACT_SYMBOL, deployer]
-  // });
+  const VALUE_LOCKED = hre.ethers.parseEther('0.01');
 
   await deploy("MemberMeFactory", {
     from: deployer,
-    args: []
+    args: [],
+    // value: VALUE_LOCKED.toString()
   })
 };
 

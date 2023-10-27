@@ -25,10 +25,14 @@ import {
 import { useState, useEffect } from 'react'
 import { ethers, Wallet, JsonRpcProvider } from 'ethers'
 import MemberMeFactoryJSON from '../../../artifacts/contracts/MemberMeFactory.sol/MemberMeFactory.json'
+import MemberMeJSON from '../../../artifacts/contracts/MemberMe.sol/MemberMe.json'
 
 import LOCAL from '../local.json'
+import BASE from '../base_goerli.json'
 
 import useStore from '../store/store'
+
+declare let window: any
 
 const adminPageTheme = extendTheme({
     sizes: {
@@ -44,14 +48,26 @@ const AdminPage: NextPage = () => {
     const [contractAddrs, setContractAddrs] = useState<string[]>([])
     const [contractAddr, setContractAddr] = useState<string | undefined>()
     const [factoryContract, setFactoryContract] = useState<ethers.Contract>()
+    const [gasPrice, setGasPrice] = useState<bigint | null>()
 
-    const { setSelectedContract } = useStore()
+    const { setEthersContract } = useStore()
 
     useEffect(() => {
         async function fetchData() {
-            const ownerWallet = new Wallet(LOCAL.accountOne.pk)
-            const provider = new JsonRpcProvider(LOCAL.jsonRpcProviderURI)
-            const signer = ownerWallet.connect(provider)
+            // const ownerWallet = new Wallet(LOCAL.accountOne.pk)
+            // const provider = new JsonRpcProvider(LOCAL.jsonRpcProviderURI)
+            // const signer = ownerWallet.connect(provider)
+            // const contract = new ethers.Contract(LOCAL.factoryAddress, MemberMeFactoryJSON.abi, signer)
+            // setFactoryContract(contract)
+
+            // const url = 'https://goerli.base.org';
+            // const provider = new JsonRpcProvider(url);
+
+            const provider = new ethers.BrowserProvider(window.ethereum)
+            const signer = await provider.getSigner()
+            // const gas = (await provider.getFeeData()).gasPrice
+            // setGasPrice(gas)
+
             const contract = new ethers.Contract(LOCAL.factoryAddress, MemberMeFactoryJSON.abi, signer)
             setFactoryContract(contract)
 
@@ -59,9 +75,12 @@ const AdminPage: NextPage = () => {
             setContractAddrs(contractAddrs)
 
             contract.on('ContractCreated', (address) => {
+                console.log('contract created: ', address)
                 setContractAddr(address)
+                contractAddrs.push(address)
+                const ethersContract = new ethers.Contract(address, MemberMeJSON.abi, signer)
+                setEthersContract(ethersContract)
             })
-            console.log(contractAddrs)
         }
         fetchData()
     }, [])
@@ -75,7 +94,25 @@ const AdminPage: NextPage = () => {
     }
 
     const createNewContract = async () => {
-        await factoryContract?.createContract(name, symbol)
+        // console.log(name, symbol)
+        // console.log('factory contract', factoryContract)
+        const gasLimit = await factoryContract?.createContract.estimateGas(name, symbol)
+        // console.log(gasPrice, gasLimit)
+        await factoryContract?.createContract(name, symbol, {
+            // value: 384199800000000,
+            gasPrice: gasPrice,
+            gasLimit: gasLimit
+            // gasPrice: 10000000000000000,
+            // gasLimit: gasLimit
+        })
+    }
+
+    const setSelectedContract = async (addr: string) => {
+        console.log('set selected contract')
+        const provider = new ethers.BrowserProvider(window.ethereum)
+        const signer = await provider.getSigner()
+        const ethersContract = new ethers.Contract(addr, MemberMeJSON.abi, signer)
+        setEthersContract(ethersContract)
     }
 
     return (
