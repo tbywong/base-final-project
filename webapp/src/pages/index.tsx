@@ -20,22 +20,22 @@ const features = [
     {
         id: 1,
         title: 'Multiple contracts',
-        text: 'Create different contracts for different fan groups'
+        // text: 'Create different contracts for different fan groups'
     },
     {
         id: 2,
         title: 'Customizable plans',
-        text: 'Create any number of plans to access different levels of your material'
+        // text: 'Create any number of plans to access different levels of your material'
     },
     {
         id: 3,
         title: 'NFT-gated membership',
-        text: 'Access to plan-specific content through NFT'
+        // text: 'Access to plan-specific content through NFT'
     },
     {
         id: 4,
         title: 'Engaged renewals',
-        text: 'Customers must re-engage monthly by renewing their subscription'
+        // text: 'Customers must re-engage monthly by renewing their subscription'
     }
 ]
 
@@ -52,11 +52,11 @@ const GridListWithHeading: NextPage = () => {
         <>
             <title>MemberMe: Onchain Subscription Platform</title>
             <Box p={4}>
-                <Container maxW={'6xl'} mt={10}>
+                <Container maxW={'6xl'} mt={1}>
                     <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={10}>
                         {features.map((feature) => (
                             <HStack key={feature.id} align={'top'}>
-                                <Box color={'green.400'} px={2}>
+                                <Box color={'blue.400'} px={2}>
                                     <Icon as={CheckIcon} />
                                 </Box>
                                 <VStack align={'start'}>
@@ -86,7 +86,7 @@ const Home: NextPage = () => {
                         fontSize={{ base: '2xl', sm: '4xl', md: '6xl' }}
                         lineHeight={'110%'}>
                         Recurring payments. Multiple plans.<br />
-                        <Text as={'span'} color={'green.400'}>
+                        <Text as={'span'} color={'blue.400'}>
                             Fully onchain.
                         </Text>
                     </Heading>
@@ -104,11 +104,11 @@ const Home: NextPage = () => {
                             <Button
                                 as="span"
                                 colorScheme={'green'}
-                                bg={'green.400'}
+                                bg={'blue.400'}
                                 rounded={'full'}
                                 px={6}
                                 _hover={{
-                                    bg: 'green.500',
+                                    bg: 'blue.500',
                                 }}>
                                 Get Started
                             </Button>

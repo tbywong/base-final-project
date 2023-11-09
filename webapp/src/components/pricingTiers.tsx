@@ -15,7 +15,9 @@ import {
     Button,
 } from '@chakra-ui/react'
 import { FaCheckCircle } from 'react-icons/fa'
-import { ethers, Wallet, JsonRpcProvider } from 'ethers'
+import { ethers } from 'ethers'
+import { useContractReads, useContractWrite } from 'wagmi'
+import MemberMeJSON from '../../../artifacts/contracts/MemberMe.sol/MemberMe.json'
 import useStore from '../store/store'
 
 interface Props {
@@ -44,36 +46,52 @@ function PriceWrapper(props: Props) {
     )
 }
 
-const PricingTiers: NextPage = () => {
-    const { currentPlans, ethersContract, setCurrentMembership } = useStore()
+const PricingTiers = () => {
+    const { selectedContractAddress, setMembershipCreated, selectedPlans } = useStore()
+    const [plans, setPlans] = useState()
     const [contractName, setContractName] = useState<string | undefined>()
 
-    useEffect(() => {
-        async function fetchData() {
-            const name = await ethersContract.name()
-            setContractName(name)
-        }
-        fetchData()
-    }, [])
+    const { data: readsData, error, isLoading } = useContractReads({
+        contracts: [
+            // {
+            //     address: selectedContractAddress as `0x${string}`,
+            //     // @ts-ignore
+            //     abi: MemberMeJSON.abi,
+            //     functionName: 'getAllPlans'
+            // },
+            {
+                address: selectedContractAddress as `0x${string}`,
+                // @ts-ignore
+                abi: MemberMeJSON.abi,
+                functionName: 'name'
+            },
+        ]
+    })
 
-    const mintMembership = async (plan: Plan) => {
-        const options = { value: ethers.parseUnits(plan.price.toString(), "wei") }
-        const membership = await ethersContract.mintMembership(plan.id, options)
-        try {
-            const pubMem = await ethersContract.getMembership()
-            setCurrentMembership(pubMem)
-        } catch {
-            console.log('couldn\'t get membership')
+    const { data, isLoading: isWriteLoading, error: isWriteError, write: mintMembership } = useContractWrite({
+        address: selectedContractAddress as `0x${string}`,
+        abi: MemberMeJSON.abi,
+        functionName: 'mintMembership',
+        onSuccess(data) {
+            console.log('mint membership complete')
+            setMembershipCreated(true)
         }
-    }
+    })
+
+    useEffect(() => {
+        // setPlans(selectedPlans)
+        if (readsData && !isLoading) {
+            // @ts-ignore
+            // setPlans(readsData[0].result)
+            // @ts-ignore
+            // setContractName(readsData[0].result)
+        }
+    })
 
     return (
         <Box py={12}>
             <VStack spacing={2} textAlign="center">
                 <Heading>{contractName}</Heading>
-                {/* <Heading as="h1" fontSize="4xl">
-                    Plans that fit your need
-                </Heading> */}
                 <Text fontSize="lg" color={'gray.500'}>
                     Connect your wallet. Get notified to renew. Cancel at anytime.
                 </Text>
@@ -84,7 +102,7 @@ const PricingTiers: NextPage = () => {
                 justify="center"
                 spacing={{ base: 4, lg: 10 }}
                 py={10}>
-                {currentPlans?.map((plan: Plan, index: any) => (
+                {selectedPlans?.map((plan: Plan, index: any) => (
                     <PriceWrapper key={index}>
                         <Box py={4} px={12}>
                             <Image src={plan.tokenURI} boxSize="200px" marginTop="15px" />
@@ -93,7 +111,8 @@ const PricingTiers: NextPage = () => {
                             </Text>
                             <HStack justifyContent="center">
                                 <Text fontSize="5xl" fontWeight="900">
-                                    {ethers.formatEther(plan.price)}
+                                    {/* {ethers.formatEther(ethers.toBigInt(plan.price))} */}
+                                    {plan.price}
                                 </Text>
                                 <Text fontSize="3xl" color="gray.500">
                                     ETH / mo
@@ -119,7 +138,15 @@ const PricingTiers: NextPage = () => {
                                 </ListItem>
                             </List>
                             <Box w="80%" pt={7}>
-                                <Button w="full" colorScheme="red" variant="outline" onClick={() => mintMembership(plan)}>
+                                <Button
+                                    w="full"
+                                    colorScheme="red"
+                                    variant="outline"
+                                    onClick={() => mintMembership({
+                                        args: [plan.id],
+                                        value: ethers.parseUnits(plan.price.toString(), "wei")
+                                    })}
+                                >
                                     Mint Membership
                                 </Button>
                             </Box>

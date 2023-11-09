@@ -16,8 +16,12 @@ const config: HardhatUserConfig = {
     artifacts: './artifacts'
   },
   networks: {
-    hardhat: {
-      chainId: 1337
+    // hardhat: {
+    //   chainId: 1337
+    // },
+    localhost: {
+      url: 'http://127.0.0.1:8545',
+      chainId: 31337
     },
     base_goerli: {
       url: "https://goerli.base.org",
